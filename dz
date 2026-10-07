@@ -1,0 +1,206 @@
+import numpy as np
+
+from grader_contracts.numpy_tasks import (
+    MatrixStatistics,
+    TimeSeriesStatistics,
+)
+
+
+def sum_prod(
+    matrices: np.ndarray,
+    vectors: np.ndarray,
+) -> np.ndarray:
+    matrices = np.asarray(matrices)
+    vectors = np.asarray(vectors)
+
+    products = np.matmul(matrices, vectors)
+    return np.sum(products, axis=0)
+
+
+def binarize(
+    matrix: np.ndarray,
+    threshold: float,
+) -> np.ndarray:
+    matrix = np.asarray(matrix)
+
+    return (matrix > threshold).astype(int)
+
+
+def unique_rows(matrix: np.ndarray) -> list[np.ndarray]:
+    matrix = np.asarray(matrix)
+
+    return [
+        np.unique(row)
+        for row in matrix
+    ]
+
+
+def unique_columns(matrix: np.ndarray) -> list[np.ndarray]:
+    matrix = np.asarray(matrix)
+
+    return [
+        np.unique(column)
+        for column in matrix.T
+    ]
+
+
+def matrix_statistics(
+    m: int,
+    n: int,
+    mean: float,
+    std: float,
+    seed: int | None = None,
+) -> MatrixStatistics:
+    generator = np.random.default_rng(seed)
+
+    matrix = generator.normal(
+        loc=mean,
+        scale=std,
+        size=(m, n),
+    )
+
+    row_means = np.mean(matrix, axis=1)
+    column_means = np.mean(matrix, axis=0)
+
+    row_variances = np.var(matrix, axis=1)
+    column_variances = np.var(matrix, axis=0)
+
+    return MatrixStatistics(
+        matrix,
+        row_means,
+        column_means,
+        row_variances,
+        column_variances,
+    )
+
+
+def chess(
+    m: int,
+    n: int,
+    a: int | float,
+    b: int | float,
+) -> np.ndarray:
+    rows, columns = np.indices((m, n))
+
+    return np.where(
+        (rows + columns) % 2 == 0,
+        a,
+        b,
+    )
+
+
+def draw_rectangle(
+    m: int,
+    n: int,
+    width: int,
+    height: int,
+    background_color: tuple[int, int, int],
+    rectangle_color: tuple[int, int, int],
+) -> np.ndarray:
+    image = np.empty((m, n, 3), dtype=np.uint8)
+    image[:] = background_color
+
+    top = (m - height) // 2
+    left = (n - width) // 2
+
+    bottom = top + height
+    right = left + width
+
+    image[top:bottom, left:right] = rectangle_color
+
+    return image
+
+
+def draw_ellipse(
+    m: int,
+    n: int,
+    a: float,
+    b: float,
+    background_color: tuple[int, int, int],
+    ellipse_color: tuple[int, int, int],
+) -> np.ndarray:
+    image = np.empty((m, n, 3), dtype=np.uint8)
+    image[:] = background_color
+
+    y, x = np.indices((m, n))
+
+    center_x = (n - 1) / 2
+    center_y = (m - 1) / 2
+
+    ellipse = (
+        ((x - center_x) ** 2) / (a ** 2)
+        + ((y - center_y) ** 2) / (b ** 2)
+        <= 1
+    )
+
+    image[ellipse] = ellipse_color
+
+    return image
+
+
+def analyze_time_series(
+    series: np.ndarray,
+    p: int,
+) -> TimeSeriesStatistics:
+    series = np.asarray(series)
+
+    mean = np.mean(series)
+    variance = np.var(series)
+    standard_deviation = np.std(series)
+
+    local_maxima = []
+    local_minima = []
+
+    for index in range(1, len(series) - 1):
+        if (
+            series[index] > series[index - 1]
+            and series[index] > series[index + 1]
+        ):
+            local_maxima.append(index)
+
+        if (
+            series[index] < series[index - 1]
+            and series[index] < series[index + 1]
+        ):
+            local_minima.append(index)
+
+    local_maxima = np.array(local_maxima, dtype=int)
+    local_minima = np.array(local_minima, dtype=int)
+
+    moving_average = np.convolve(
+        series,
+        np.ones(p) / p,
+        mode="valid",
+    )
+
+    return TimeSeriesStatistics(
+        mean,
+        variance,
+        standard_deviation,
+        local_maxima,
+        local_minima,
+        moving_average,
+    )
+
+
+def one_hot(
+    labels: np.ndarray,
+    class_count: int | None = None,
+) -> np.ndarray:
+    labels = np.asarray(labels, dtype=int)
+
+    if class_count is None:
+        if len(labels) == 0:
+            class_count = 0
+        else:
+            class_count = int(np.max(labels)) + 1
+
+    result = np.zeros(
+        (len(labels), class_count),
+        dtype=int,
+    )
+
+    for index, label in enumerate(labels):
+        result[index, label] = 1
+
+    return result
